@@ -15,6 +15,9 @@ The content is presented using streamlit.
 ## Setup section 
 The initial block of code contains is a procedure to set up libraries and collect the datasets from kaggle website, using kagglehub. Should this method not work (for whatever reason, such as problems of the website), a copy updated to the version during which the code was written is used and kept in a local folder. 
 
+## Part 1: Honey production Dataset
+The second block is dedicated to the analysis of the first, main dataset, regarding the evolution in the quantity of honey produced by the colonies in US.  
+
 ## Datasets
 - honey production dataset: https://www.kaggle.com/datasets/mohitpoudel/us-honey-production-19952021
 
