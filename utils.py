@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
     The function tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
-    Whenever this works correctly, the datasets are put in a variable and a message of successful result is showed. 
+    Whenever this works correctly, the datasets are put in a variable and a message of successful result is displayed. 
     Should this procedure not work for whatever reason, a non-updated version of the Datasets, which is the first version used
     when the code was first finished, is kept in the folder "datasets" and therefore used in their place. 
     The 3 datasets contain:
@@ -85,6 +85,42 @@ def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
     
     return honey_production_df, apistox_df, bees_health_weather_dict
 
+def load_pesticide_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
+    '''
+    The function tries to connect to the Kaggle website, in order to load a support encryption Dataset (through Kagglehub).
+    Whenever this works correctly, the dataset is put in a variable and a message of successful result is displayed. 
+    Should this procedure not work for whatever reason, a local version of the Dataset from the folder "datasets" 
+    is used instead. 
+    The dataset contains the associaton of each of the US states to a number, as well as the countries in those states.
+    '''
+    try:
+        ## States Encoding Dataset ##
+
+        states_encoding_df = kgh.dataset_load(
+            KaggleDatasetAdapter.PANDAS, 
+            "usgs/pesticide-use",
+            "dictionary.csv"
+        )
+        print(f" states_encoding_df {states_encoding_df.shape} : Done! \n")
+
+    except Exception as e: 
+
+        #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
+        print(f"... {e}.\nProcedure stopped.")
+        print("-------------------------------\nLocal loading...")
+
+        ## Encoding Dataset ##
+
+        states_encoding_df = pd.read_csv("datasets/US_honey_production.csv")
+        print(f" honey_production_df {states_encoding_df.shape} : Done! \n")
+
+        print("\nSome problem occurred. Local encoding dataset loaded instead.")
+    
+
+    pesticide_usage_df = pd.read_csv("datasets/EPest_county_estimates_2019.txt", sep= "\t")
+    print(f" pesticide_usage_df {pesticide_usage_df.shape} : Done! \n")
+    
+    return states_encoding_df, pesticide_usage_df
 
 def EDA(dataframe: pd.DataFrame, head: int = 5):
     '''
