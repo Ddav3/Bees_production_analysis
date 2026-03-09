@@ -85,42 +85,70 @@ def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
     
     return honey_production_df, apistox_df, bees_health_weather_dict
 
-def load_pesticide_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
+def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
     '''
-    The function tries to connect to the Kaggle website, in order to load a support encryption Dataset (through Kagglehub).
-    Whenever this works correctly, the dataset is put in a variable and a message of successful result is displayed. 
-    Should this procedure not work for whatever reason, a local version of the Dataset from the folder "datasets" 
-    is used instead. 
-    The dataset contains the associaton of each of the US states to a number, as well as the countries in those states.
+    Simply returns the Datasets from datasets folder, regarding the pesticide usage in US during 2019.
+    The method can be extended to numerous years, possibly merging the dataframes.
+    Being alone an interesting information, the method is left autonomous so that the data can be 
+    analyzed at will.
+
+    Source: https://water.usgs.gov/nawqa/pnsp/usage/maps/county-level/
     '''
-    try:
-        ## States Encoding Dataset ##
-
-        states_encoding_df = kgh.dataset_load(
-            KaggleDatasetAdapter.PANDAS, 
-            "usgs/pesticide-use",
-            "dictionary.csv"
-        )
-        print(f" states_encoding_df {states_encoding_df.shape} : Done! \n")
-
-    except Exception as e: 
-
-        #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
-        print(f"... {e}.\nProcedure stopped.")
-        print("-------------------------------\nLocal loading...")
-
-        ## Encoding Dataset ##
-
-        states_encoding_df = pd.read_csv("datasets/US_honey_production.csv")
-        print(f" honey_production_df {states_encoding_df.shape} : Done! \n")
-
-        print("\nSome problem occurred. Local encoding dataset loaded instead.")
-    
-
     pesticide_usage_df = pd.read_csv("datasets/EPest_county_estimates_2019.txt", sep= "\t")
     print(f" pesticide_usage_df {pesticide_usage_df.shape} : Done! \n")
+
+    if remove_couples:
+        for compound in pesticide_usage_df.COMPOUND.unique():
+            if '&' in compound:
+                pesticide_usage_df.drop(pesticide_usage_df[pesticide_usage_df.COMPOUND == compound].index, inplace=True)
+    if remove_kg:
+        pesticide_usage_df.drop(["EPEST_HIGH_KG", "EPEST_LOW_KG"], axis = 1, inplace=True)
+
     
-    return states_encoding_df, pesticide_usage_df
+    return pesticide_usage_df
+
+def apistox_support_setup()-> pd.DataFrame:
+    '''
+    A stathic method whose job is only to use various resources to obtain information regarding the compounds
+    mentioned in Apistox Datasets (ex: CASRN). It connects the dataset regarding the pesticide usage in US with 
+    another one that contains the associations of the compounds with their CASRN, other than establishing, for each row,
+    the related state, converting the FIPS number into the name string. 
+
+    For an updated comptox dataset, see: https://comptox.epa.gov/dashboard/chemical-lists/PPDB
+    '''
+    #obtaining compstox dataset for compound-CASRN association
+    comptox_df = pd.read_csv("datasets/Chemical List PPDB-2026-03-07.csv")
+    #cleaning 
+    comptox_df.columns = comptox_df.columns.str.replace(" ", "_").map(str.upper)
+    comptox_df.PREFERRED_NAME = comptox_df.PREFERRED_NAME.map(str.upper)
+    comptox_df = comptox_df[["PREFERRED_NAME", "CASRN"]]
+    comptox_df.columns = ["COMPOUND", "CAS"]
+
+    #obtaining the data for pesticide_usage, to merge with compstox
+    pesticide_usage_df = load_pesticide_usage_datasets()
+    pesticide_usage_df = pesticide_usage_df.merge(comptox_df)
+    pesticide_usage_df.drop("COUNTY_FIPS_CODE", axis = 1, inplace=True)
+    pesticide_usage_df.drop_duplicates(inplace=True)
+
+    #replacing the FIPS code with the state name  
+    pesticide_usage_df.rename(columns={"STATE_FIPS_CODE": "STATE_CODE"}, inplace=True)
+    states_map = {
+        1: 'Alabama', 2: 'Alaska', 4: 'Arizona', 5: 'Arkansas', 6: 'California',
+        8: 'Colorado', 9: 'Connecticut', 10: 'Delaware', 11: 'District of Columbia', 12: 'Florida', 13: 'Georgia',
+        15: 'Hawaii', 16: 'Idaho', 17: 'Illinois', 18: 'Indiana', 19: 'Iowa', 20: 'Kansas', 
+        21: 'Kentucky', 22: 'Louisiana', 23: 'Maine', 24: 'Maryland', 25: 'Massachusetts', 
+        26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi', 29: 'Missouri', 30: 'Montana', 
+        31: 'Nebraska', 32: 'Nevada', 33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico', 
+        36: 'New York', 37: 'North Carolina', 38: 'North Dakota', 39: 'Ohio', 40: 'Oklahoma', 
+        41: 'Oregon', 42: 'Pennsylvania', 44: 'Rhode Island', 45: 'South Carolina', 46: 'South Dakota', 
+        47: 'Tennessee', 48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia', 53: 'Washington', 
+        54: 'West Virginia', 55: 'Wisconsin', 56: 'Wyoming'
+    }
+    pesticide_usage_df["STATE_NAME"] = pesticide_usage_df.STATE_CODE.map(states_map).map(str.upper)
+    pesticide_usage_df.drop(columns="STATE_CODE", inplace=True)
+
+    return pesticide_usage_df
+
 
 def EDA(dataframe: pd.DataFrame, head: int = 5):
     '''
@@ -142,27 +170,26 @@ def EDA(dataframe: pd.DataFrame, head: int = 5):
     )
 
 
-def plot_all(dataframe: pd.DataFrame, by: str, x_col: str, y_col: str):
+def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
     '''
     Builds the subplots for a group of plots. The dimension is calculated considering the upper limit of the square root of 
     the number of elements of which the second input's column is composed.
     Inputs: 
         dataframe: the Dataframe
-        by: the column from which the plots will be subdivided
-        x_col: in the Dataframe, the name of the column that will be used in the x axis
-        y_col: in the Dataframe, the name of the column containing the data for the y axis
+        by: the column name from which the plots will be subdivided
+        x: in the Dataframe, the name of the column that will be used in the x axis
+        y: in the Dataframe, the name of the column containing the data for the y axis
     '''
     
     elements = dataframe[by].unique()
-    rows = int(np.ceil(np.sqrt(len(elements)))) 
-    cols= rows
-    _, axes = plt.subplots(rows, cols, figsize =(20,20))
+    size = int(np.ceil(np.sqrt(len(elements)))) 
+    _, axes = plt.subplots(size, size, figsize =(20,20))
 
     for index, element in enumerate(elements):
-        plot = axes[int(index/rows),index%cols]
+        plot = axes[int(index/size),index%size]
         filtered_part = dataframe[dataframe[by] == element]
         
-        plot.plot(filtered_part[x_col], filtered_part[y_col])
+        plot.plot(filtered_part[x], filtered_part[y])
         plot.set_title(str(element))
         plot.tick_params(axis ="both", labelsize = 9)
         plot.grid(alpha = 0.3)
@@ -170,3 +197,21 @@ def plot_all(dataframe: pd.DataFrame, by: str, x_col: str, y_col: str):
     plt.tight_layout()
     plt.show()
 
+def bar_all(dataframe: pd.DataFrame, xlabels: str, cols: str):
+    '''
+    #TODO: il dataframe deve essere groupato per la colonna rispetto alla quale si faranno i grafici.
+    La Y è automaticamente calcolata 
+    '''
+    indexes = dataframe.index
+    size = int(np.ceil(np.sqrt(len(indexes)))) 
+    _, axes = plt.subplots(size, size, figsize =(21,21))
+
+    for index, element in enumerate(indexes):
+        bar = axes[int(index/size),index%size]
+        bar.bar(xlabels,  dataframe.loc[element].values.flatten())
+        bar.set_title(str(element))
+        bar.tick_params(axis ="both", labelsize = 9)
+        bar.grid(alpha =0.3)
+
+    plt.tight_layout()
+    plt.show()
