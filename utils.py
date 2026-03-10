@@ -181,10 +181,10 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
     Builds the subplots for a group of plots. The dimension is calculated considering the upper limit of the square root of 
     the number of elements of which the second input's column is composed.
     Inputs: 
-        dataframe: the Dataframe
-        by: the column name from which the plots will be subdivided
-        x: in the Dataframe, the name of the column that will be used in the x axis
-        y: in the Dataframe, the name of the column containing the data for the y axis
+    -   dataframe: the Dataframe
+    -   by: the column name from which the plots will be subdivided
+    -   x: in the Dataframe, the name of the column that will be used in the x axis
+    -   y: in the Dataframe, the name of the column containing the data for the y axis
     '''
     
     elements = dataframe[by].unique()
@@ -203,18 +203,25 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
     plt.tight_layout()
     plt.show()
 
-def bar_all(dataframe: pd.DataFrame, xlabels: str, cols: str):
+def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     '''
-    #TODO: il dataframe deve essere groupato per la colonna rispetto alla quale si faranno i grafici.
-    La Y è automaticamente calcolata 
+    Creates a bar of all the rows of a Dataframe passed in input. The size is computed as the sqrt of the number of rows.
+    Adviced for the labels to be the index of the Dataframe.
+    Inputs:
+    -   dataframe: the Dataframe from which the data and the indexes for the plot structure are gathered.
+    -   xlabels: a list of string with the same length as the number of cols that will be used as labels
+    -   cols: the names of 
     '''
+    if(len(xlabels) != len(cols)):
+        print("'xlabes' and 'cols' args must have he same length")
+        return
     indexes = dataframe.index
     size = int(np.ceil(np.sqrt(len(indexes)))) 
     _, axes = plt.subplots(size, size, figsize =(21,21))
 
     for index, element in enumerate(indexes):
         bar = axes[int(index/size),index%size]
-        bar.bar(xlabels,  dataframe.loc[element].values.flatten())
+        bar.bar(xlabels,  dataframe[cols].loc[element].values.flatten())
         bar.set_title(str(element))
         bar.tick_params(axis ="both", labelsize = 9)
         bar.grid(alpha =0.3)
@@ -249,4 +256,4 @@ def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 
     return pd.DataFrame({
             'Features': X.columns,
             'Weight %': random_forest.feature_importances_
-           })
+           }).sort_values(by="Weight %", ascending=False).reset_index(drop=True)
