@@ -109,7 +109,29 @@ def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = 
                 pesticide_usage_df.drop(pesticide_usage_df[pesticide_usage_df.COMPOUND == compound].index, inplace=True)
     if remove_kg:
         pesticide_usage_df.drop(["EPEST_HIGH_KG", "EPEST_LOW_KG"], axis = 1, inplace=True)
+    else:
+        pesticide_usage_df["EPEST_LOW_KG"].fillna(-1, axis = 0,inplace=True)
 
+        proportion_estimates = []
+        for index in pesticide_usage_df.index:
+            min = pesticide_usage_df.loc[index, "EPEST_LOW_KG"]
+            max = pesticide_usage_df.loc[index, "EPEST_HIGH_KG"]
+            if(min != -1):
+                if(min>max):
+                    pesticide_usage_df.loc[index, "EPEST_LOW_KG"] = max
+                    pesticide_usage_df.loc[index, "EPEST_HIGH_KG"] = min
+                
+                if(max != 0):
+                    proportion_estimates.append(min/max)
+            
+        min_proportion = sum(proportion_estimates)/len(pesticide_usage_df.EPEST_HIGH_KG)
+
+        to_replace = pesticide_usage_df.EPEST_LOW_KG == -1
+        pesticide_usage_df.loc[to_replace, "EPEST_LOW_KG"] = pesticide_usage_df.loc[to_replace, "EPEST_HIGH_KG"] * min_proportion
+
+        pesticide_usage_df["MEAN_KG"] =  (pesticide_usage_df["EPEST_LOW_KG"] +  pesticide_usage_df["EPEST_HIGH_KG"])/2
+        pesticide_usage_df.drop(["EPEST_HIGH_KG", "EPEST_LOW_KG"], axis = 1, inplace = True)
+        
     
     return pesticide_usage_df
 
@@ -131,7 +153,7 @@ def apistox_support_setup()-> pd.DataFrame:
     comptox_df.columns = ["COMPOUND", "CAS"]
 
     #obtaining the data for pesticide_usage, to merge with compstox
-    pesticide_usage_df = load_pesticide_usage_datasets()
+    pesticide_usage_df = load_pesticide_usage_datasets(remove_kg=True)
     pesticide_usage_df = pesticide_usage_df.merge(comptox_df)
     pesticide_usage_df.drop("COUNTY_FIPS_CODE", axis = 1, inplace=True)
     pesticide_usage_df.drop_duplicates(inplace=True)
