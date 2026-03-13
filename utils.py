@@ -97,6 +97,12 @@ def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = 
     The method can be extended to numerous years, possibly merging the dataframes.
     Being alone an interesting information, the method is left autonomous so that the data can be 
     analyzed at will.
+    Inputs:
+    -   remove_couples: being indicated in some rows, the result of multiple compounds combined, the faculty to
+        delete these rows is given
+    -   remove_kg: for some analysis, the kg of pesticide used might not be of interest, therefore, the faculty to
+        delete those columns is given; otherwise, a procedure to fill the missing data with a proportion between max/min is done
+        and errors regarding the insertion of the max in the min column and viceversa are corrected
 
     Source: https://water.usgs.gov/nawqa/pnsp/usage/maps/county-level/
     '''
@@ -135,7 +141,7 @@ def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = 
     
     return pesticide_usage_df
 
-def apistox_support_setup()-> pd.DataFrame:
+def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
     '''
     A stathic method whose job is only to use various resources to obtain information regarding the compounds
     mentioned in Apistox Datasets (ex: CASRN). It connects the dataset regarding the pesticide usage in US with 
@@ -143,6 +149,9 @@ def apistox_support_setup()-> pd.DataFrame:
     the related state, converting the FIPS number into the name string. 
 
     For an updated comptox dataset, see: https://comptox.epa.gov/dashboard/chemical-lists/PPDB
+
+    Inputs:
+    -   remove_kg: used in order to express to the "load_pesticide_usage_datasets" function to delete the kg usage columns or not
     '''
     #obtaining compstox dataset for compound-CASRN association
     comptox_df = pd.read_csv("datasets/Chemical List PPDB-2026-03-07.csv")
@@ -153,10 +162,16 @@ def apistox_support_setup()-> pd.DataFrame:
     comptox_df.columns = ["COMPOUND", "CAS"]
 
     #obtaining the data for pesticide_usage, to merge with compstox
-    pesticide_usage_df = load_pesticide_usage_datasets(remove_kg=True)
+    pesticide_usage_df = load_pesticide_usage_datasets(remove_kg=remove_kg)
     pesticide_usage_df = pesticide_usage_df.merge(comptox_df)
     pesticide_usage_df.drop("COUNTY_FIPS_CODE", axis = 1, inplace=True)
-    pesticide_usage_df.drop_duplicates(inplace=True)
+    if not remove_kg:
+        mean_kg = pesticide_usage_df.groupby(["COMPOUND", "STATE_FIPS_CODE"]).sum()["MEAN_KG"]
+        pesticide_usage_df.drop("MEAN_KG", axis = 1, inplace=True)
+        pesticide_usage_df.drop_duplicates(inplace=True)
+        pesticide_usage_df["MEAN_KG"] = mean_kg.values
+    else:
+        pesticide_usage_df.drop_duplicates(inplace=True)
 
     #replacing the FIPS code with the state name  
     pesticide_usage_df.rename(columns={"STATE_FIPS_CODE": "STATE_CODE"}, inplace=True)
@@ -251,10 +266,10 @@ def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     plt.tight_layout()
     plt.show()
 
-def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> pd.DataFrame:
+def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> tuple[pd.DataFrame, float]:
     '''
     The function executes random_forest on the given dataset, giving weights to the feature that establish the target in input. 
-    The result is returned together with the accuracy score totalized, in a Dataframe form that associates the values to their feature.
+    The result is returned in a Dataframe form that associates the values to their feature, together with the accuracy score totalized.
     Inputs:
     -   X_data: the data, in dataframe form, to which the weights are to be associated. These data will alreayd undergo the "get_dummies"
         procedure, so you shouldn't do it.
@@ -272,10 +287,8 @@ def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 
     y_pred = random_forest.predict(X_test)
     score = accuracy_score(y_true=y_test, y_pred=y_pred)
 
-    print("First score: ", score , "\n")
+    print("Score: ", score)
 
-    print("Classification Results:")
-    return pd.DataFrame({
-            'Features': X.columns,
-            'Weight %': random_forest.feature_importances_
-           }).sort_values(by="Weight %", ascending=False).reset_index(drop=True)
+    return pd.DataFrame({"Features": X.columns,
+                         "Weight %": random_forest.feature_importances_}
+                         ).sort_values(by="Weight %", ascending=False).reset_index(drop=True), score
