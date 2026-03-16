@@ -5,6 +5,9 @@ from kagglehub import KaggleDatasetAdapter
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
@@ -134,3 +137,29 @@ def plot_all(dataframe: pd.DataFrame, by: str, x_col: str, y_col: str):
     plt.tight_layout()
     plt.show()
 
+def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> tuple[pd.DataFrame, float]:
+    '''
+    The function executes random_forest on the given dataset, giving weights to the feature that establish the target in input. 
+    The result is returned in a Dataframe form that associates the values to their feature, together with the accuracy score totalized.
+    Inputs:
+    -   X_data: the data, in dataframe form, to which the weights are to be associated. These data will alreayd undergo the "get_dummies"
+        procedure, so you shouldn't do it.
+    -   y_target: the target, in series form, that is obtained using the X_data.
+    -   n_estimators: the number of estimators to use for Random Forest
+    -   train_size: the proportion of data to use for training. The rest is used for prediction
+    -   random_state: a random state that sets the seed for reproducibility
+    '''
+    X = pd.get_dummies(X_data)
+    target = y_target
+    random_forest = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state)
+
+    X_train, X_test, y_train, y_test = train_test_split(X,target, train_size=train_size, random_state=random_state)
+    random_forest.fit(X_train, y_train)
+    y_pred = random_forest.predict(X_test)
+    score = accuracy_score(y_true=y_test, y_pred=y_pred)
+
+    print("Score: ", score)
+
+    return pd.DataFrame({"Features": X.columns,
+                         "Weight %": random_forest.feature_importances_}
+                         ).sort_values(by="Weight %", ascending=False).reset_index(drop=True), score
