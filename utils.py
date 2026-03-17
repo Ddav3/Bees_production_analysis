@@ -5,10 +5,6 @@ from kagglehub import KaggleDatasetAdapter
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-
 def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
     The function tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
