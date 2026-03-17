@@ -192,6 +192,28 @@ def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
 
     return pesticide_usage_df
 
+def load_complete_inspections_on_weather_df()-> pd.DataFrame:
+    inspections_on_weather_dict = load_bees_datasets()[2]
+
+    apiary_part = inspections_on_weather_dict["Apiary_Information"].merge(inspections_on_weather_dict["Hive_Information"]).merge(inspections_on_weather_dict["HCC_Inspections"])
+    apiary_part.rename(columns={"InsptDate": "Date", }, inplace=True)
+    apiary_part.Date = pd.to_datetime(apiary_part.Date, format="%Y-%m-%d")
+
+    weather_part = inspections_on_weather_dict["Weather_Stations"].merge(inspections_on_weather_dict["Hourly_Weather"]).merge(inspections_on_weather_dict["Weather_Observations"])
+    weather_part.rename(columns={"Station_City": "City", }, inplace=True)
+    weather_part.Date = pd.to_datetime(weather_part.Date, format="%m/%d/%Y")
+
+    inspections_on_weather_df = weather_part.merge(apiary_part, on="Date")
+    inspections_on_weather_df.dropna(axis= 0, inplace=True)
+    inspections_on_weather_df.columns = inspections_on_weather_df.columns.map(str.upper)
+    inspections_on_weather_df.rename(columns = {"INPSECTIONID" : "INSPECTIONID"}, inplace=True)
+    inspections_on_weather_df.HEALTHY = inspections_on_weather_df.HEALTHY.map(lambda x : 1 if x == "Yes" else 0)
+
+    inspections_on_weather_df.STATE = inspections_on_weather_df.STATE.map(lambda x: "NORTHCAROLINA" if x == "NC" else "UTAH")
+    inspections_on_weather_df[["TEMPERATURE", "HUMIDITY", "DEW_POINT", "WIND_SPEED", "WIND_GUST", "PRESSURE", "PRECIP"]] = inspections_on_weather_df[["TEMPERATURE", "HUMIDITY", "DEW_POINT", "WIND_SPEED", "WIND_GUST", "PRESSURE", "PRECIP"]].apply(lambda x: pd.to_numeric(x.str.strip()) if x.dtype == "object" else pd.to_numeric(x))
+    inspections_on_weather_df["YEAR"] = inspections_on_weather_df.DATE.dt.year
+    inspections_on_weather_df["MONTH"] = inspections_on_weather_df.DATE.dt.month
+    return inspections_on_weather_df
 
 def EDA(dataframe: pd.DataFrame, head: int = 5):
     '''
