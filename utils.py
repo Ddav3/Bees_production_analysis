@@ -145,7 +145,7 @@ def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True,
     
     return pesticide_usage_df
 
-def apistox_support_setup(year: int = 2019, remove_kg : bool = True)-> pd.DataFrame:
+def load_apistox_support_dataframe(year: int = 2019, remove_kg : bool = True)-> pd.DataFrame:
     '''
     A stathic method whose job is only to use various resources to obtain information regarding the compounds
     mentioned in Apistox Datasets (ex: CASRN). It connects the dataset regarding the pesticide usage in US with 
@@ -235,6 +235,7 @@ def load_varroa_detection_dataset()-> pd.DataFrame:
 
     return varroa_decetion_df
 
+
 def EDA(dataframe: pd.DataFrame, head: int = 5):
     '''
     A simple function used to easily implement the EDA in the input dataframe 
@@ -307,6 +308,7 @@ def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
 
     plt.tight_layout()
     plt.show()
+
 
 def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> tuple[pd.DataFrame, float]:
     '''
