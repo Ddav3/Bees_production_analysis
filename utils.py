@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import OneHotEncoder
 
 
-def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
+def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
     The function tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
     Whenever this works correctly, the datasets are put in a variable and a message of successful result is displayed. 
@@ -91,23 +91,27 @@ def load_bees_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
     
     return honey_production_df, apistox_df, bees_health_weather_dict
 
-def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
+def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
     '''
     Simply returns the Datasets from datasets folder, regarding the pesticide usage in US during 2019.
     The method can be extended to numerous years, possibly merging the dataframes.
     Being alone an interesting information, the method is left autonomous so that the data can be 
     analyzed at will.
     Inputs:
+    -   year: the year to which the data are related.
     -   remove_couples: being indicated in some rows, the result of multiple compounds combined, the faculty to
-        delete these rows is given
+        delete these rows is given.
     -   remove_kg: for some analysis, the kg of pesticide used might not be of interest, therefore, the faculty to
         delete those columns is given; otherwise, a procedure to fill the missing data with a proportion between max/min is done
-        and errors regarding the insertion of the max in the min column and viceversa are corrected
+        and errors regarding the insertion of the max in the min column and viceversa are corrected.
 
     Source: https://water.usgs.gov/nawqa/pnsp/usage/maps/county-level/
     '''
-    pesticide_usage_df = pd.read_csv("datasets/EPest_county_estimates_2019.txt", sep= "\t")
-    print(f" pesticide_usage_df {pesticide_usage_df.shape} : Done! \n")
+    if year < 1992 or year > 2019:
+        print("Error. Years available for pesticide usage: 1992-2019.")
+        return
+    pesticide_usage_df = pd.read_csv(f"datasets/EPest_county_estimates_{year}.txt", sep= "\t")
+    print(f" pesticide_usage_df {pesticide_usage_df.shape} - year {year}: Done! \n")
 
     if remove_couples:
         for compound in pesticide_usage_df.COMPOUND.unique():
@@ -141,7 +145,7 @@ def load_pesticide_usage_datasets(remove_couples: bool = True, remove_kg:bool = 
     
     return pesticide_usage_df
 
-def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
+def apistox_support_setup(year: int = 2019, remove_kg : bool = True)-> pd.DataFrame:
     '''
     A stathic method whose job is only to use various resources to obtain information regarding the compounds
     mentioned in Apistox Datasets (ex: CASRN). It connects the dataset regarding the pesticide usage in US with 
@@ -151,8 +155,12 @@ def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
     For an updated comptox dataset, see: https://comptox.epa.gov/dashboard/chemical-lists/PPDB
 
     Inputs:
+    -   year: the year to which the the data are related to (most recent by default). Used to call "load_pesticide_usage_datasets" function
     -   remove_kg: used in order to express to the "load_pesticide_usage_datasets" function to delete the kg usage columns or not
     '''
+    #obtaining the data for pesticide_usage
+    pesticide_usage_df = load_pesticide_usage_datasets(year = year, remove_kg=remove_kg)
+
     #obtaining compstox dataset for compound-CASRN association
     comptox_df = pd.read_csv("datasets/Chemical List PPDB-2026-03-07.csv")
     #cleaning 
@@ -161,8 +169,7 @@ def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
     comptox_df = comptox_df[["PREFERRED_NAME", "CASRN"]]
     comptox_df.columns = ["COMPOUND", "CAS"]
 
-    #obtaining the data for pesticide_usage, to merge with compstox
-    pesticide_usage_df = load_pesticide_usage_datasets(remove_kg=remove_kg)
+    #merging the datasets
     pesticide_usage_df = pesticide_usage_df.merge(comptox_df)
     pesticide_usage_df.drop("COUNTY_FIPS_CODE", axis = 1, inplace=True)
     if not remove_kg:
@@ -193,7 +200,7 @@ def apistox_support_setup(remove_kg : bool = True)-> pd.DataFrame:
     return pesticide_usage_df
 
 def load_complete_inspections_on_weather_df()-> pd.DataFrame:
-    inspections_on_weather_dict = load_bees_datasets()[2]
+    inspections_on_weather_dict = load_base_datasets()[2]
 
     apiary_part = inspections_on_weather_dict["Apiary_Information"].merge(inspections_on_weather_dict["Hive_Information"]).merge(inspections_on_weather_dict["HCC_Inspections"])
     apiary_part.rename(columns={"InsptDate": "Date", }, inplace=True)
@@ -214,6 +221,19 @@ def load_complete_inspections_on_weather_df()-> pd.DataFrame:
     inspections_on_weather_df["YEAR"] = inspections_on_weather_df.DATE.dt.year
     inspections_on_weather_df["MONTH"] = inspections_on_weather_df.DATE.dt.month
     return inspections_on_weather_df
+
+def load_varroa_detection_dataset()-> pd.DataFrame:
+    varroa_decetion_df = kgh.dataset_load(
+        KaggleDatasetAdapter.PANDAS,
+        "anaisabelcaicedoc/varroa-detection-with-discrete-variables",
+        "hive_monitoring_dataset.csv"
+    )
+
+    en_cols_names = ["AVG_TEMPERATURE", "AVG_HUMIDITY", "AVG_CO2", "AVG_TVOC", "WEIGHTED_SUM", "PREDICTED_ALERT"]
+    varroa_decetion_df.columns = en_cols_names
+    varroa_decetion_df.PREDICTED_ALERT = varroa_decetion_df.PREDICTED_ALERT.map(lambda x : 0 if x == "Bajo" else (1 if x == "Medio" else (2 if x == "Alto" else 3)))
+
+    return varroa_decetion_df
 
 def EDA(dataframe: pd.DataFrame, head: int = 5):
     '''
