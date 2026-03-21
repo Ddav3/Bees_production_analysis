@@ -89,6 +89,9 @@ def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
 
         print("\nSome problem occurred. Local datasets loaded instead.")
     
+    if "Unnamed: 0" in honey_production_df.columns:
+        honey_production_df.drop(columns=["Unnamed: 0"], inplace=True)
+
     return honey_production_df, apistox_df, bees_health_weather_dict
 
 def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
@@ -309,6 +312,46 @@ def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     plt.tight_layout()
     plt.show()
 
+
+def linear_regression_and_plot(x_array: list, y_array:list, train_size: float = 0.7, random_state = None, 
+                               pred_x_array: list = [],
+                               plot_train_test = True, xlabel: str = "", ylabel: str = ""):
+    '''
+    Function for analyze a trend that unifies and incorporates both the process of linear regression and the plot of the results.
+    The linear regression's score is printed.
+    Inputs:
+    -   x_array: the array used along the x axis
+    -   pred_x_array: the eventual array to use for a prediction along the x_axis
+    -   y_array: the of data that correspond to the elements of x_array
+    -   train_size: the size of the training; the test size is computed consequently
+    -   random_state: the random state used for replicability
+    -   plot_train_test: if True, allows to plot the train and test results.
+    '''
+    #preparing the model   
+    X_train, X_test, y_train, y_test = train_test_split(x_array.reshape(-1,1), 
+                                                y_array, 
+                                                train_size=train_size,
+                                                random_state=random_state)
+    
+    model= LinearRegression()
+    model.fit(X = X_train, y = y_train)
+    print(f"Score: {model.score(X_test, y_test)}")
+
+    #doing predictions
+    y_pred = model.predict(pred_x_array.reshape(-1, 1))    
+
+    #plotting the results, if asked
+    if plot_train_test:
+        plt.figure(figsize=(9, 5))
+        plt.plot(pred_x_array, y_pred, color="red", label="Prediction")
+        plt.scatter(X_train, y_train, color="grey", s=40, alpha=0.7, label="Train")
+        plt.scatter(X_test, y_test, color="green", s=60, alpha=0.8, label="Test")
+        plt.xlabel(xlabel, fontsize = 11)
+        plt.ylabel(ylabel, fontsize = 11)
+        plt.title("Trend Prediction")
+        plt.legend()
+        plt.grid(True, alpha=0.35)
+        plt.show()
 
 def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> tuple[pd.DataFrame, float]:
     '''

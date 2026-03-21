@@ -33,3 +33,5 @@ Last part involves the dataset folder regarding the study of the weather effects
 - apistox dataset: https://www.kaggle.com/datasets/baharabaz/apistox-dataset
 
 - weather's influence dataset: https://www.kaggle.com/datasets/jocelyndumlao/predicting-honeybee-health-from-hive-and-weather
+
+- Varroa Destructor detection dataset: https://www.kaggle.com/datasets/anaisabelcaicedoc/varroa-detection-with-discrete-variables
