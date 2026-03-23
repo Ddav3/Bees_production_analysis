@@ -1,33 +1,17 @@
-# BEES PRODUCTION ANALYSIS 
-The code analyses a dataset containing info mainly related to the production of honey from bees' colonies situated in US from 1995 to 2021. 
-The dataset is examined showing the evolution in the production of honey and the number of colonies over the years and depending on the area. After that, a prediction on the possible number of colonies/quantity of honey produced for the next 10 years is realized through a linear regression model. 
-
-This main dataset is then combined with two others.
-
-The first one containes information regarding the toxicity of pesticides and agrochemicals to honeybees, in order to predict whether the compound is toxic or not for them. 
-By merging these two, the code checks the correlation between the pesticides adopted in countries in which the use is the highest and the possible reduction of colonies in these countries.
-
-The second one shows the weather's effects on the beehives in some countries of US. The analysis is made based on hourly observations on apiaries during 2016-2017.
-The combination of the two datasets aims at understanding the influence of weather and temperatures on the change in beehive number, other than being able to classify a beehive as "healthy"/"unhealthy", based on the given data.
-
-Utility functions are kept in a separate file.
-The content is presented using streamlit. 
-
-## Setup section 
-The initial block of code contains is a procedure to set up libraries and collect the datasets from kaggle website, using kagglehub. Should this method not work (for whatever reason, such as problems of the website), a copy updated to the version during which the code was written is used and kept in a local folder. 
-
-## Part 1: Honey production
-The first part is dedicated to the analysis of the first, main dataset, regarding the evolution in the quantity of honey produced by the colonies in US.  
+# HONEY PRODUCTION FROM US BEES - ANALYSIS 
+The scope of the project is to analyze the trend of honey produced by US honeybees along the period 1992-2021.
+The code is presented using streamlit (see folder "application" for the code).
+For a more detailed analysis, the project has been divided into 4 parts:
+1. a first general analysis on the honey production
+2. an estimate of the impact of pesticide use on the bees
+3. an estimate of the effects of weather conditions on bees health
+4. a short in-depth analysis on the jump recorded between 2009-2010.
+The information are shown together with their related state. 
+For a better transperency, the code is shown also in blocks of a jupyter notebook, which is also subdivided into the same parts and roughly explained. 
 
 
-## Part 2: Toxicity of Pesticide on Bees (Apistox)
-This part of the code illustrates the second dataset regarding the  
-
-
-## Part 3: Weather Effects on Bees' Health
-Last part involves the dataset folder regarding the study of the weather effects on the bees colony health. 
-
-## Datasets
+## Main Datasets
+Here follows the links to the datasets that are mainly used for the analysis.  
 - honey production dataset: https://www.kaggle.com/datasets/mohitpoudel/us-honey-production-19952021
 
 - apistox dataset: https://www.kaggle.com/datasets/baharabaz/apistox-dataset
