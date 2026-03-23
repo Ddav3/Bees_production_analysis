@@ -1,27 +1,20 @@
-import numpy as np
 import pandas as pd
 import kagglehub as kgh
 from kagglehub import KaggleDatasetAdapter
-import pandas as pd
 import os
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import OneHotEncoder
-
 
 def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
-    The function tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
+    Tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
     Whenever this works correctly, the datasets are put in a variable and a message of successful result is displayed. 
-    Should this procedure not work for whatever reason, a non-updated version of the Datasets, which is the first version used
-    when the code was first finished, is kept in the folder "datasets" and therefore used in their place. 
-    The 3 datasets contain:
-    - the honey production in US from 1995 to 2021
-    - the toxicity levels on bees
-    - the observations of weather effects on bees health
+    Should this procedure not work for whatever reason, a non-updated version of the Datasets, which dates back to the first version 
+    used when the code was finalised, is kept in the folder "datasets" and therefore used in their place. 
+    -   Firstly, a dataset regarding honey production in US from 1995 to 2021 is loaded;
+    -   the same procedure is followed for a dataset on the toxicity level of chemical compounds on bees;
+    -   finally, a folder with info about the observations of weather effects on bees health is put in a vector. The datasets are
+        not immediately merged since it may be better to make possible to analyse each of them separately, if desired.
+
+    See README for datasets source.
     '''
     try:
 
@@ -94,26 +87,25 @@ def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
 
     return honey_production_df, apistox_df, bees_health_weather_dict
 
-def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
+def load_pesticide_usage_dataset(year: int = 2019, remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
     '''
-    Simply returns the Datasets from datasets folder, regarding the pesticide usage in US during 2019.
-    The method can be extended to numerous years, possibly merging the dataframes.
-    Being alone an interesting information, the method is left autonomous so that the data can be 
-    analyzed at will.
+    Returns the pesticide usage in US for given year.
+    The method can be extended to multiple years, possibly merging the dataframes.
+    Having interesting information on its own, the method is left autonomous so that the data can be analyzed at will.
     Inputs:
-    -   year: the year to which the data are related.
-    -   remove_couples: being indicated in some rows, the result of multiple compounds combined, the faculty to
-        delete these rows is given.
-    -   remove_kg: for some analysis, the kg of pesticide used might not be of interest, therefore, the faculty to
-        delete those columns is given; otherwise, a procedure to fill the missing data with a proportion between max/min is done
+    -   year: the year to which the data are related;
+    -   remove_couples: the result of multiple compounds combined is showd in some rows, so it allows to delete these rows;
+    -   remove_kg: for some analysis, the kg of pesticide used might not be of interest: therefore, if True,
+        deletes those columns; otherwise, a procedure to fill the missing data with a proportion between max/min is done
         and errors regarding the insertion of the max in the min column and viceversa are corrected.
 
     Source: https://water.usgs.gov/nawqa/pnsp/usage/maps/county-level/
     '''
+    #verifying the validity of input and loading the dataset
     if year < 1992 or year > 2019:
         print("Error. Years available for pesticide usage: 1992-2019.")
         return
-    pesticide_usage_df = pd.read_csv(f"datasets/EPest_county_estimates_{year}.txt", sep= "\t")
+    pesticide_usage_df = pd.read_csv(f"datasets/epest_datasets/EPest_county_estimates_{year}.txt", sep= "\t")
     print(f" pesticide_usage_df {pesticide_usage_df.shape} - year {year}: Done! \n")
 
     if remove_couples:
@@ -123,8 +115,8 @@ def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True,
     if remove_kg:
         pesticide_usage_df.drop(["EPEST_HIGH_KG", "EPEST_LOW_KG"], axis = 1, inplace=True)
     else:
+        #procedure for filling the missing cells with a min proportional estimate
         pesticide_usage_df["EPEST_LOW_KG"].fillna(-1, axis = 0,inplace=True)
-
         proportion_estimates = []
         for index in pesticide_usage_df.index:
             min = pesticide_usage_df.loc[index, "EPEST_LOW_KG"]
@@ -136,33 +128,31 @@ def load_pesticide_usage_datasets(year: int = 2019, remove_couples: bool = True,
                 
                 if(max != 0):
                     proportion_estimates.append(min/max)
-            
         min_proportion = sum(proportion_estimates)/len(pesticide_usage_df.EPEST_HIGH_KG)
 
+        #replacing_values
         to_replace = pesticide_usage_df.EPEST_LOW_KG == -1
         pesticide_usage_df.loc[to_replace, "EPEST_LOW_KG"] = pesticide_usage_df.loc[to_replace, "EPEST_HIGH_KG"] * min_proportion
-
+        #overwriting max and min estimate columns with mean 
         pesticide_usage_df["MEAN_KG"] =  (pesticide_usage_df["EPEST_LOW_KG"] +  pesticide_usage_df["EPEST_HIGH_KG"])/2
         pesticide_usage_df.drop(["EPEST_HIGH_KG", "EPEST_LOW_KG"], axis = 1, inplace = True)
-        
     
     return pesticide_usage_df
 
 def load_apistox_support_dataframe(year: int = 2019, remove_kg : bool = True)-> pd.DataFrame:
     '''
-    A stathic method whose job is only to use various resources to obtain information regarding the compounds
-    mentioned in Apistox Datasets (ex: CASRN). It connects the dataset regarding the pesticide usage in US with 
-    another one that contains the associations of the compounds with their CASRN, other than establishing, for each row,
-    the related state, converting the FIPS number into the name string. 
+    Connects the dataset on pesticide usage in US with another one (comptox), that contains the associations compounds-CASRN, 
+    other than linking the info to the respective state, converting its FIPS number into the string name of the state. 
 
     For an updated comptox dataset, see: https://comptox.epa.gov/dashboard/chemical-lists/PPDB
 
     Inputs:
-    -   year: the year to which the the data are related to (most recent by default). Used to call "load_pesticide_usage_datasets" function
+    -   year: the year to which the data are related to (most recent by default). Used to call "load_pesticide_usage_datasets" 
+        function
     -   remove_kg: used in order to express to the "load_pesticide_usage_datasets" function to delete the kg usage columns or not
     '''
     #obtaining the data for pesticide_usage
-    pesticide_usage_df = load_pesticide_usage_datasets(year = year, remove_kg=remove_kg)
+    pesticide_usage_df = load_pesticide_usage_dataset(year = year, remove_kg=remove_kg)
 
     #obtaining compstox dataset for compound-CASRN association
     comptox_df = pd.read_csv("datasets/Chemical List PPDB-2026-03-07.csv")
@@ -203,179 +193,88 @@ def load_apistox_support_dataframe(year: int = 2019, remove_kg : bool = True)-> 
     return pesticide_usage_df
 
 def load_complete_inspections_on_weather_df()-> pd.DataFrame:
+    '''
+    Operates on the third dataset loaded by "load_base_datasets" function, which is put in a vector, so that it's possible to
+    analyze the six datasets singularly if desired. 
+    First, the datasets related to apiary information and inspections on the hives are merged (apiary part) and the same goes for 
+    those regarding the weather observations and stations (weather part). After the names of the columns later to be involved in 
+    the merge are fixed, together with the type of their elements, the final dataset is built and the necessary columns' 
+    type is fixed.
+    '''
     inspections_on_weather_dict = load_base_datasets()[2]
 
+    #building apiary part
     apiary_part = inspections_on_weather_dict["Apiary_Information"].merge(inspections_on_weather_dict["Hive_Information"]).merge(inspections_on_weather_dict["HCC_Inspections"])
     apiary_part.rename(columns={"InsptDate": "Date", }, inplace=True)
     apiary_part.Date = pd.to_datetime(apiary_part.Date, format="%Y-%m-%d")
 
+    #building weather part
     weather_part = inspections_on_weather_dict["Weather_Stations"].merge(inspections_on_weather_dict["Hourly_Weather"]).merge(inspections_on_weather_dict["Weather_Observations"])
     weather_part.rename(columns={"Station_City": "City", }, inplace=True)
     weather_part.Date = pd.to_datetime(weather_part.Date, format="%m/%d/%Y")
 
+    #building final dataset
     inspections_on_weather_df = weather_part.merge(apiary_part, on="Date")
     inspections_on_weather_df.dropna(axis= 0, inplace=True)
     inspections_on_weather_df.columns = inspections_on_weather_df.columns.map(str.upper)
     inspections_on_weather_df.rename(columns = {"INPSECTIONID" : "INSPECTIONID"}, inplace=True)
     inspections_on_weather_df.HEALTHY = inspections_on_weather_df.HEALTHY.map(lambda x : 1 if x == "Yes" else 0)
 
+    #fixing names, types and adding columns for grouping
     inspections_on_weather_df.STATE = inspections_on_weather_df.STATE.map(lambda x: "NORTHCAROLINA" if x == "NC" else "UTAH")
     inspections_on_weather_df[["TEMPERATURE", "HUMIDITY", "DEW_POINT", "WIND_SPEED", "WIND_GUST", "PRESSURE", "PRECIP"]] = inspections_on_weather_df[["TEMPERATURE", "HUMIDITY", "DEW_POINT", "WIND_SPEED", "WIND_GUST", "PRESSURE", "PRECIP"]].apply(lambda x: pd.to_numeric(x.str.strip()) if x.dtype == "object" else pd.to_numeric(x))
     inspections_on_weather_df["YEAR"] = inspections_on_weather_df.DATE.dt.year
     inspections_on_weather_df["MONTH"] = inspections_on_weather_df.DATE.dt.month
     return inspections_on_weather_df
 
-def load_varroa_detection_dataset()-> pd.DataFrame:
-    varroa_decetion_df = kgh.dataset_load(
-        KaggleDatasetAdapter.PANDAS,
-        "anaisabelcaicedoc/varroa-detection-with-discrete-variables",
-        "hive_monitoring_dataset.csv"
-    )
-
-    en_cols_names = ["AVG_TEMPERATURE", "AVG_HUMIDITY", "AVG_CO2", "AVG_TVOC", "WEIGHTED_SUM", "PREDICTED_ALERT"]
-    varroa_decetion_df.columns = en_cols_names
-    varroa_decetion_df.PREDICTED_ALERT = varroa_decetion_df.PREDICTED_ALERT.map(lambda x : 0 if x == "Bajo" else (1 if x == "Medio" else (2 if x == "Alto" else 3)))
-
-    return varroa_decetion_df
-
-
-def EDA(dataframe: pd.DataFrame, head: int = 5):
+def load_varroa_detection_dataset(load_normalized_data = False)-> pd.DataFrame:
     '''
-    A simple function used to easily implement the EDA in the input dataframe 
+    Tries to connect to the Kaggle website, in order to load the on Varroa Destructor detection, which is
+    used in the project (through Kagglehub).
+    The 2 available datasets are actually almost identical: 
+    -   hive_monitoring_dataset contains the data as they were gathered
+    -   data_Varroa_Detection has the same information, but normalized in order to have an easier analysis
+
+    Input:
+    -   load_normalized_data: if True, loads "data_Varroa_Detection" dataset containing normalized data, the other one if False
     '''
 
-    print(
-        "##-------------- INFO ------------------------------##\n")
-    dataframe.info()
-    print(
-        "\n\n##-------------- DESCRIBE --------------------------##\n",
-        dataframe.describe(), 
-        "\n\n##-------------- HEAD("+str(head) +") ---------------------------##\n",
-        dataframe.head(n = head),
-        "\n\n##-------------- CORRELATION -----------------------##\n",
-        dataframe.corr(numeric_only=True),
-        "\n\n##-------------- NUMBER OF NAN ---------------------##\n",
-        "\nNumber of rows with null/NaN: " + str(dataframe.size - dataframe.dropna().size) + "\n\n"
-    )
+    if not load_normalized_data:
+        ## Loading monitoring dataset ##
+        try:
 
+            varroa_detection_df = kgh.dataset_load(
+                KaggleDatasetAdapter.PANDAS,
+                "anaisabelcaicedoc/varroa-detection-with-discrete-variables",
+                "hive_monitoring_dataset.csv"
+            )
+        except Exception as e:
+            #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
+            print(f"... {e}.\nProcedure stopped.")
+            print("-------------------------------\nLocal loading...")   
 
-def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
-    '''
-    Builds the subplots for a group of plots. The dimension is calculated considering the upper limit of the square root of 
-    the number of elements of which the second input's column is composed.
-    Inputs: 
-    -   dataframe: the Dataframe
-    -   by: the column name from which the plots will be subdivided
-    -   x: in the Dataframe, the name of the column that will be used in the x axis
-    -   y: in the Dataframe, the name of the column containing the data for the y axis
-    '''
-    
-    elements = dataframe[by].unique()
-    size = int(np.ceil(np.sqrt(len(elements)))) 
-    _, axes = plt.subplots(size, size, figsize =(20,20))
-
-    for index, element in enumerate(elements):
-        plot = axes[int(index/size),index%size]
-        filtered_part = dataframe[dataframe[by] == element]
+            varroa_detection_df = pd.read_csv("datasets/varroa_destructor/hive_monitoring_dataset.csv")
+            print(f" Varroa Destructor Detection Dataset {varroa_detection_df.shape} : Done! \n")    
         
-        plot.plot(filtered_part[x], filtered_part[y])
-        plot.set_title(str(element))
-        plot.tick_params(axis ="both", labelsize = 9)
-        plot.grid(alpha = 0.3)
+    else:  
+        ## Loading normalized dataset ##
+        try:
+            varroa_detection_df = kgh.dataset_load(
+                KaggleDatasetAdapter.PANDAS,
+                "anaisabelcaicedoc/varroa-detection-with-discrete-variables",
+                "data_Varroa_Detection.csv"
+            )
+        except Exception as e:
+            #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
+            print(f"... {e}.\nProcedure stopped.")
+            print("-------------------------------\nLocal loading...")   
 
-    plt.tight_layout()
-    plt.show()
+            varroa_detection_df = pd.read_csv("datasets/varroa_destructor/data_Varroa_Detection.csv")    
+            print(f" Varroa Destructor Detection Dataset (normalized) {varroa_detection_df.shape} : Done! \n")    
 
-def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
-    '''
-    Creates a bar of all the rows of a Dataframe passed in input. The size is computed as the sqrt of the number of rows.
-    Adviced for the labels to be the index of the Dataframe.
-    Inputs:
-    -   dataframe: the Dataframe from which the data and the indexes for the plot structure are gathered.
-    -   xlabels: a list of string with the same length as the number of cols that will be used as labels
-    -   cols: the names of 
-    '''
-    if(len(xlabels) != len(cols)):
-        print("'xlabes' and 'cols' args must have he same length")
-        return
-    indexes = dataframe.index
-    size = int(np.ceil(np.sqrt(len(indexes)))) 
-    _, axes = plt.subplots(size, size, figsize =(21,21))
+    #fixing names fo the columns
+    en_cols_names = ["AVG_TEMPERATURE", "AVG_HUMIDITY", "AVG_CO2", "AVG_TVOC", "WEIGHTED_SUM", "PREDICTED_ALERT"]
+    varroa_detection_df.columns = en_cols_names
+    varroa_detection_df.PREDICTED_ALERT = varroa_detection_df.PREDICTED_ALERT.map(lambda x : 0 if x == "Bajo" else (1 if x == "Medio" else (2 if x == "Alto" else 3)))
 
-    for index, element in enumerate(indexes):
-        bar = axes[int(index/size),index%size]
-        bar.bar(xlabels,  dataframe[cols].loc[element].values.flatten())
-        bar.set_title(str(element))
-        bar.tick_params(axis ="both", labelsize = 9)
-        bar.grid(alpha =0.3)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def linear_regression_and_plot(x_array: list, y_array:list, train_size: float = 0.7, random_state = None, 
-                               pred_x_array: list = [],
-                               plot_train_test = True, xlabel: str = "", ylabel: str = ""):
-    '''
-    Function for analyze a trend that unifies and incorporates both the process of linear regression and the plot of the results.
-    The linear regression's score is printed.
-    Inputs:
-    -   x_array: the array used along the x axis
-    -   pred_x_array: the eventual array to use for a prediction along the x_axis
-    -   y_array: the of data that correspond to the elements of x_array
-    -   train_size: the size of the training; the test size is computed consequently
-    -   random_state: the random state used for replicability
-    -   plot_train_test: if True, allows to plot the train and test results.
-    '''
-    #preparing the model   
-    X_train, X_test, y_train, y_test = train_test_split(x_array.reshape(-1,1), 
-                                                y_array, 
-                                                train_size=train_size,
-                                                random_state=random_state)
-    
-    model= LinearRegression()
-    model.fit(X = X_train, y = y_train)
-    print(f"Score: {model.score(X_test, y_test)}")
-
-    #doing predictions
-    y_pred = model.predict(pred_x_array.reshape(-1, 1))    
-
-    #plotting the results, if asked
-    if plot_train_test:
-        plt.figure(figsize=(9, 5))
-        plt.plot(pred_x_array, y_pred, color="red", label="Prediction")
-        plt.scatter(X_train, y_train, color="grey", s=40, alpha=0.7, label="Train")
-        plt.scatter(X_test, y_test, color="green", s=60, alpha=0.8, label="Test")
-        plt.xlabel(xlabel, fontsize = 11)
-        plt.ylabel(ylabel, fontsize = 11)
-        plt.title("Trend Prediction")
-        plt.legend()
-        plt.grid(True, alpha=0.35)
-        plt.show()
-
-def random_forest(X_data: pd.DataFrame, y_target: pd.Series, n_estimators:int = 500, train_size:float = 0.8, random_state:int = None)-> tuple[pd.DataFrame, float]:
-    '''
-    The function executes random_forest on the given dataset, giving weights to the feature that establish the target in input. 
-    The result is returned in a Dataframe form that associates the values to their feature, together with the accuracy score totalized.
-    Inputs:
-    -   X_data: the data, in dataframe form, to which the weights are to be associated. These data will alreayd undergo the "get_dummies"
-        procedure, so you shouldn't do it.
-    -   y_target: the target, in series form, that is obtained using the X_data.
-    -   n_estimators: the number of estimators to use for Random Forest
-    -   train_size: the proportion of data to use for training. The rest is used for prediction
-    -   random_state: a random state that sets the seed for reproducibility
-    '''
-    X = pd.get_dummies(X_data)
-    target = y_target
-    random_forest = RandomForestClassifier(n_estimators=n_estimators, random_state=random_state)
-
-    X_train, X_test, y_train, y_test = train_test_split(X,target, train_size=train_size, random_state=random_state)
-    random_forest.fit(X_train, y_train)
-    y_pred = random_forest.predict(X_test)
-    score = accuracy_score(y_true=y_test, y_pred=y_pred)
-
-    print("Score: ", score)
-
-    return pd.DataFrame({"Features": X.columns,
-                         "Weight %": random_forest.feature_importances_}
-                         ).sort_values(by="Weight %", ascending=False).reset_index(drop=True), score
+    return varroa_detection_df
