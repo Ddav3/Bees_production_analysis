@@ -3,7 +3,7 @@ import kagglehub as kgh
 from kagglehub import KaggleDatasetAdapter
 import os
 
-def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
+def load_base_datasets(load_honey_production: bool = True, load_apistox: bool = True, load_weather_effects: bool = True)-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]:
     '''
     Tries to connect to the Kaggle website, in order to load the Datasets used in the project (through Kagglehub).
     Whenever this works correctly, the datasets are put in a variable and a message of successful result is displayed. 
@@ -13,6 +13,10 @@ def load_base_datasets()-> tuple[pd.DataFrame, pd.DataFrame, dict[pd.DataFrame]]
     -   the same procedure is followed for a dataset on the toxicity level of chemical compounds on bees;
     -   finally, a folder with info about the observations of weather effects on bees health is put in a vector. The datasets are
         not immediately merged since it may be better to make possible to analyse each of them separately, if desired.
+
+    In any case, the operations are done if and only if the boolean argument related to the dataframe is set True; otherwise, only 
+    the datasets whose argument is true will be loaded, by creating a tuple with only the loaded datasets. (By default, they are 
+    all loaded).
 
     See README for datasets source.
     '''
