@@ -20,76 +20,144 @@ def load_base_datasets(load_honey_production: bool = True, load_apistox: bool = 
 
     See README for datasets source.
     '''
-    try:
 
-        ## First Dataset ##
+    ## First Dataset ##
+    if load_honey_production:
+        try:
+            honey_production_df = kgh.dataset_load(
+                KaggleDatasetAdapter.PANDAS, 
+                "mohitpoudel/us-honey-production-19952021",
+                "US_honey_dataset_updated.csv"
+            )
 
-        honey_production_df = kgh.dataset_load(
-            KaggleDatasetAdapter.PANDAS, 
-            "mohitpoudel/us-honey-production-19952021",
-            "US_honey_dataset_updated.csv"
-        )
+        except Exception as e:
+            print("-------------------------------\nLoading local Dataset 1...")
+            honey_production_df = pd.read_csv("../datasets/US_honey_production.csv")
+        
+        if "Unnamed: 0" in honey_production_df.columns:
+            honey_production_df.drop(columns=["Unnamed: 0"], inplace=True)
+
         print(f" honey_production_df {honey_production_df.shape} : Done! \n")
+    else:
+        honey_production_df = None
 
 
-        ## Second Dataset ##
+    ## Second Dataset ##
+    if load_apistox:
+        try:
+            apistox_df = kgh.dataset_load(
+                KaggleDatasetAdapter.PANDAS,
+                "baharabaz/apistox-dataset", 
+                "apistox/dataset_final.csv"
+            )
 
-        apistox_df = kgh.dataset_load(
-            KaggleDatasetAdapter.PANDAS,
-            "baharabaz/apistox-dataset", 
-            "apistox/dataset_final.csv"
-        )
+        except Exception as e:
+            print("-------------------------------\nLoading local Dataset 2...")
+            apistox_df = pd.read_csv("../datasets/apistox.csv")
+        
         print(f" apistox_df {apistox_df.shape} : Done! \n")
+    else:
+        apistox_df = None
 
 
-        ## Third Dataset (collected in a dictionary) later to be merged ##
+    ## Third Dataset (collected in a dictionary) later to be merged ##   
+    if load_weather_effects:
+        try:
+            #Accessing the subfolder in which the former datasets are stored
+            path = kgh.dataset_download("jocelyndumlao/predicting-honeybee-health-from-hive-and-weather")
+            subfolder = [elem for elem in os.listdir(path)]
+            datasets_folder = os.path.join(path,subfolder[0]) 
 
-        #Accessing the subfolder in which the former datasets are stored
-        path = kgh.dataset_download("jocelyndumlao/predicting-honeybee-health-from-hive-and-weather")
-        subfolder = [elem for elem in os.listdir(path)]
-        datasets_folder = os.path.join(path,subfolder[0]) 
+            #Creating a dictionary of datasets in order to store them and making them easily accessible for comparison
+            weather_effects_dict = {}
+            for filename in os.listdir(datasets_folder):
+                weather_effects_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join(datasets_folder,filename))
+                print(f" {filename} {weather_effects_dict[filename.replace(".csv", "")].shape} : Done!")
 
-        #Creating a dictionary of datasets in order to store them and make them easily accessible for comparison
-        bees_health_weather_dict = {}
+        except Exception as e:
+            print("-------------------------------\nLoading local Dataset 3...")
+            weather_effects_dict = {}
+            for filename in os.listdir("../datasets/bees_health_on_weather"):
+                weather_effects_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join("../datasets/bees_health_on_weather",filename))
+                print(f" {filename} {weather_effects_dict[filename.replace(".csv", "")].shape} : Done!")
+    else:
+        weather_effects_dict = None   
 
-        for filename in os.listdir(datasets_folder):
-            bees_health_weather_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join(datasets_folder,filename))
-            print(f" {filename} {bees_health_weather_dict[filename.replace(".csv", "")].shape} : Done!")
+    print("\n Datasets collection completed.")
 
-        print("\nDatasets collection completed.")
-
-    except Exception as e: 
-
-        #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
-        print(f"... {e}.\nProcedure stopped.")
-        print("-------------------------------\nLocal loading...")
-
-
-        ## First Dataset ##
-
-        honey_production_df = pd.read_csv("datasets/US_honey_production.csv")
-        print(f" honey_production_df {honey_production_df.shape} : Done! \n")
-
-
-        ## Second Dataset ##
-
-        apistox_df = pd.read_csv("datasets/apistox.csv")
-        print(f" apistox_df {apistox_df.shape} : Done! \n")
+    return tuple(df for df in [honey_production_df, apistox_df, weather_effects_dict] if df is not None)
 
 
-        ## Third Dataset (collected in a dictionary) later to be merged ##
+    # try:
 
-        bees_health_weather_dict = {}
-        for filename in os.listdir("datasets/bees_health_on_weather"):
-            bees_health_weather_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join("datasets/bees_health_on_weather",filename))
-            print(f" {filename} {bees_health_weather_dict[filename.replace(".csv", "")].shape} : Done!")
+    #     ## First Dataset ##
 
-        print("\nSome problem occurred. Local datasets loaded instead.")
+    #     honey_production_df = kgh.dataset_load(
+    #         KaggleDatasetAdapter.PANDAS, 
+    #         "mohitpoudel/us-honey-production-19952021",
+    #         "US_honey_dataset_updated.csv"
+    #     )
+    #     print(f" honey_production_df {honey_production_df.shape} : Done! \n")
+
+
+    #     ## Second Dataset ##
+
+    #     apistox_df = kgh.dataset_load(
+    #         KaggleDatasetAdapter.PANDAS,
+    #         "baharabaz/apistox-dataset", 
+    #         "apistox/dataset_final.csv"
+    #     )
+    #     print(f" apistox_df {apistox_df.shape} : Done! \n")
+
+
+    #     ## Third Dataset (collected in a dictionary) later to be merged ##
+
+    #     #Accessing the subfolder in which the former datasets are stored
+    #     path = kgh.dataset_download("jocelyndumlao/predicting-honeybee-health-from-hive-and-weather")
+    #     subfolder = [elem for elem in os.listdir(path)]
+    #     datasets_folder = os.path.join(path,subfolder[0]) 
+
+    #     #Creating a dictionary of datasets in order to store them and make them easily accessible for comparison
+    #     weather_effects_dict = {}
+
+    #     for filename in os.listdir(datasets_folder):
+    #         weather_effects_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join(datasets_folder,filename))
+    #         print(f" {filename} {weather_effects_dict[filename.replace(".csv", "")].shape} : Done!")
+
+    #     print("\nDatasets collection completed.")
+
+    # except Exception as e: 
+
+    #     #should the web access to kaggle not work, the local (possibly not updated) version can be used instead 
+    #     print(f"... {e}.\nProcedure stopped.")
+    #     print("-------------------------------\nLocal loading...")
+
+
+    #     ## First Dataset ##
+
+    #     honey_production_df = pd.read_csv("datasets/US_honey_production.csv")
+    #     print(f" honey_production_df {honey_production_df.shape} : Done! \n")
+
+
+    #     ## Second Dataset ##
+
+    #     apistox_df = pd.read_csv("datasets/apistox.csv")
+    #     print(f" apistox_df {apistox_df.shape} : Done! \n")
+
+
+    #     ## Third Dataset (collected in a dictionary) later to be merged ##
+
+    #     weather_effects_dict = {}
+    #     for filename in os.listdir("datasets/bees_health_on_weather"):
+    #         weather_effects_dict[filename.replace(".csv", "")] = pd.read_csv(os.path.join("datasets/bees_health_on_weather",filename))
+    #         print(f" {filename} {weather_effects_dict[filename.replace(".csv", "")].shape} : Done!")
+
+    #     print("\nSome problem occurred. Local datasets loaded instead.")
     
-    if "Unnamed: 0" in honey_production_df.columns:
-        honey_production_df.drop(columns=["Unnamed: 0"], inplace=True)
+    # if "Unnamed: 0" in honey_production_df.columns:
+    #     honey_production_df.drop(columns=["Unnamed: 0"], inplace=True)
 
-    return honey_production_df, apistox_df, bees_health_weather_dict
+    # return honey_production_df, apistox_df, weather_effects_dict
 
 def load_pesticide_usage_dataset(year: int = 2019, remove_couples: bool = True, remove_kg:bool = True)-> pd.DataFrame:
     '''
@@ -205,7 +273,7 @@ def load_complete_inspections_on_weather_df()-> pd.DataFrame:
     the merge are fixed, together with the type of their elements, the final dataset is built and the necessary columns' 
     type is fixed.
     '''
-    inspections_on_weather_dict = load_base_datasets()[2]
+    inspections_on_weather_dict = load_base_datasets(load_honey_production=False, load_apistox=False)[0]
 
     #building apiary part
     apiary_part = inspections_on_weather_dict["Apiary_Information"].merge(inspections_on_weather_dict["Hive_Information"]).merge(inspections_on_weather_dict["HCC_Inspections"])

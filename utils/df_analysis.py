@@ -15,6 +15,7 @@ def EDA(dataframe: pd.DataFrame, head: int = 5):
         "\n\n##-------------- HEAD("+str(head) +") ---------------------------##\n",
         dataframe.head(n = head),
         "\n\n##-------------- CORRELATION -----------------------##\n",
+        dataframe.corr(numeric_only=True),
         sns.heatmap(dataframe.corr(numeric_only=True), annot=True),
         "\n\n##-------------- NUMBER OF NAN ---------------------##\n",
         "\nNumber of rows with null/NaN: " + str(dataframe.size - dataframe.dropna().size) + "\n\n"

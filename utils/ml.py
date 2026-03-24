@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 def linear_regression_and_plot(x_array: list, y_array:list, train_size: float = 0.7, random_state = None, 
-                               pred_x_array: list = [],
+                               pred_x_array: list = [], show_pred_results: bool = False,
                                plot_train_test = True, xlabel: str = "", ylabel: str = ""):
     '''
     Analyses the trend represented by the arrays in input. Computes the process of linear regression and plots the results.
@@ -17,8 +17,9 @@ def linear_regression_and_plot(x_array: list, y_array:list, train_size: float = 
     -   y_array: the of data that correspond to the elements of x_array
     -   train_size: the size of the training; the test size is computed consequently
     -   random_state: the random state used for replicability
-    -   pred_x_array = the list (empty by default) on which it is wished to do predictions after fitting the model. 
+    -   pred_x_array: the list (empty by default) on which it is wished to do predictions after fitting the model. 
         If left empty, no prediction is done
+    -   show_pred_results: if True, shows the y_pred obtained with the model
     -   plot_train_test: if True, allows to plot train and test results
     -   xlabel: the string to be put as label along x axis
     -   ylabel: the string to be put as label along y axis
@@ -35,7 +36,8 @@ def linear_regression_and_plot(x_array: list, y_array:list, train_size: float = 
     #doing predictions
     if len(pred_x_array) > 0:
         y_pred = model.predict(pred_x_array.reshape(-1, 1))    
-        print(f" Results of prediction: {y_pred}")
+        if show_pred_results:
+            print(f" Results of prediction: {y_pred}")
 
     #plotting the results, if there are data for it
     if plot_train_test:
