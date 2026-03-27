@@ -1,9 +1,53 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
+def plot_multiple(x_axis: pd.Series | list, y_cols: pd.DataFrame|pd.Series, xlabel: str = "", ylabel: str = "Values") -> go.Scatter:
+    '''
+    Creates a graphical representation in plotly that can also contain more than a single plot. It is required that the data 
+    are plotted with respect to the same data used in x_axis.
+    The method only uses plotly, but it can be easily extended to other libraries with a variable "method"(0 = plotly, 1 = pyplot,...)
+    Inputs:
+    -   w
+    '''
+    figure = go.Figure()
+    if type(y_cols) == pd.DataFrame:
+        for col in y_cols.columns:
+                figure.add_trace(go.Scatter(
+                    x=x_axis,
+                    y=y_cols[col],
+                    mode="lines+markers",
+                    line=dict(width=2),
+                    marker=dict(size=7),
+                    name=col,
+                    hovertemplate=f'<b>{col}</b><br>Value: %{{y}}<extra></extra>'))  
+    else:
+        figure.add_trace(go.Scatter(
+                x=x_axis,
+                y=y_cols,
+                mode="lines+markers",
+                line=dict(width=2),
+                marker=dict(size=7),
+                name=y_cols.name,
+                hovertemplate=f'<br>Value: %{{y}}<extra></extra>'))  
+         
+            
+    figure.update_layout(
+        xaxis_title=xlabel,
+        yaxis_title=ylabel,
+        hovermode='x unified',
+        width=1000, 
+        height=500,
+        plot_bgcolor='black',
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=0.99, xanchor="right", x=0.99))
+    figure.update_xaxes(showgrid=True, gridcolor='lightgray')
+    figure.update_yaxes(showgrid=True, gridcolor='lightgray')
+    return figure
 
 
-def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
+def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str) -> plt.Figure:
     '''
     Builds the subplots for a group of plots. The dimension is calculated considering the upper limit of the square root of 
     the number of elements of which the second input's column is composed.
@@ -17,7 +61,7 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
     #setting up variables
     elements = dataframe[by].unique()
     size = int(np.ceil(np.sqrt(len(elements)))) 
-    _, axes = plt.subplots(size, size, figsize =(20,20))
+    fig, axes = plt.subplots(size, size, figsize =(20,20))
 
     # making plots 
     for index, element in enumerate(elements):
@@ -30,7 +74,8 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str):
         plot.grid(alpha = 0.3)
 
     plt.tight_layout()
-    plt.show()
+    plt.close("all")
+    return fig
 
 def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     '''
