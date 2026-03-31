@@ -61,7 +61,7 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str) -> plt.Figure:
     #setting up variables
     elements = dataframe[by].unique()
     size = int(np.ceil(np.sqrt(len(elements)))) 
-    fig, axes = plt.subplots(size, size, figsize =(20,20))
+    figure, axes = plt.subplots(size, size, figsize =(20,20))
 
     # making plots 
     for index, element in enumerate(elements):
@@ -75,7 +75,39 @@ def plot_all(dataframe: pd.DataFrame, by: str, x: str, y: str) -> plt.Figure:
 
     plt.tight_layout()
     plt.close("all")
-    return fig
+    return figure
+
+def bar_single_ys_interactive(x_axis: list[str], y_cols: list[float|int], xlabel: str = "", ylabel: str = "", title: str = "")-> go.Figure:
+    '''
+    Returns an interactive graph object Bar, that for each element named in x_axis, plots its height from y_cols. Note that x_axis
+    and y_cols must have the same length. 
+    Inputs:
+    -   x_axis: the list of names for the bars
+    -   y_cols: the values for each element in x_axis
+    -   xlabel: the etiquette to eventually put along the x axis 
+    -   ylabel: the etiquette to eventually put along the y axis
+    -   title: the title to put above the plot, if present
+    '''
+    if len(x_axis) != len(y_cols):
+        print("the list of names for axis x and the list of values for cols must have the same length")
+        return 
+    figure = go.Figure()
+
+    figure.add_trace(go.Bar(
+        x=x_axis,
+        y=y_cols,
+        hovertemplate='<b>%{x}</b><br>Failures: %{y:,}<extra></extra>'
+    ))
+
+    figure.update_layout(
+        title=title,
+        xaxis_title=xlabel,
+        yaxis_title=ylabel,
+        showlegend=False,
+        height=500,
+        plot_bgcolor='black'
+    )
+    return figure
 
 def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     '''
@@ -93,7 +125,7 @@ def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
     #setting up data
     indexes = dataframe.index
     size = int(np.ceil(np.sqrt(len(indexes)))) 
-    _, axes = plt.subplots(size, size, figsize =(21,21))
+    figure, axes = plt.subplots(size, size, figsize =(21,21))
 
     # making bars
     for index, element in enumerate(indexes):
@@ -104,4 +136,28 @@ def bar_all(dataframe: pd.DataFrame, xlabels: list[str], cols: list[str]):
         bar.grid(alpha =0.3)
 
     plt.tight_layout()
-    plt.show()
+    plt.close("all")
+    return figure
+
+def heatmap_cols_interactive(df: pd.DataFrame, compare_cols: bool = False, title: str = "")-> go.Figure:
+    '''
+    Returns an interactive version of the correlation matrix, as a graph_object Heatmap. It shows the title for the Heatmap, if given.
+    If you wish to evaluate the correlation among columns, set compare_cols to True, otherwise, the correlation between 
+    cols and rows is made. 
+    '''
+    if compare_cols:
+        df = df.corr()
+    
+    figure = go.Figure(data=go.Heatmap(
+        x=df.columns.tolist(),        
+        y=df.index.tolist(),        
+        z=df.values,        
+        hovertemplate='<b>%{x} ~ %{y}</b><br>Corr: %{z:.2f}<extra></extra>'
+    ))
+
+    figure.update_layout(
+        title=title,
+        height = 600,
+        plot_bgcolor='black'
+    )
+    return figure

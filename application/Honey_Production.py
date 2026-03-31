@@ -1,6 +1,4 @@
 import numpy as np
-import pandas as pd 
-import seaborn as sns
 import streamlit as st
 import sys
 from pathlib import Path
@@ -91,7 +89,7 @@ The trend is slightly more linear than the other, yet there are few evident jump
 st.plotly_chart(value_production_prediction, width ="stretch")
 st.markdown(
 """
-We don't know the actual quantity of honey that has been produced in these days, we are just aware of the fact that a pound of honey costs from 8 and 15 dollars, considering only honey produced inside the US territory (not imported). The chart shows an estimate of approximately 10.290k dollars, meaning the assumed quantity of honey produced shal vary between 1.286k and 686k (just divide the total for 2026 with the cost for a pound).
+We don't know the actual quantity of honey that has been produced in these days, we are just aware of the fact that a pound of honey costs from 8 and 15 dollars, considering only honey produced inside the US territory (not imported). The chart shows an estimate of approximately **10.290k** dollars, meaning the assumed quantity of honey produced shal vary **between 1.286k and 686k** (just divide the total for 2026 with the cost for a pound).
 \nThat concludes the general overview. In the next sections, it will be shown:\n
 -   the toxicity level from :blue-badge[apistox.csv] combined with other information;
 -   a glimpse of the effect caused by the weather to the bees health, combining the tables of the dataset :green-badge[predicting-honeybee-health-from-hive-and-weather].  
