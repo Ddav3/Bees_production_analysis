@@ -2,9 +2,9 @@
 The scope of the project is to analyze the trend of honey produced by US honeybees along the period 1995-2021.
 The code is presented using streamlit (execute "streamlit run run.py" for application).
 
-## Run - 
+## Run
 git clone https://github.com/Ddav3/Bees_production_analysis.git
-cd Bees_production_analysis
+<cd Bees_production_analysis>
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
