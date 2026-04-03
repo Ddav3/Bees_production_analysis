@@ -108,17 +108,17 @@ usage_ranking_ppdb_df = usage_ranking_df.drop("POS_DIFF",axis=1)
 #Application Part --------------------------------------------------------------------------------------
 st.header("Apistox - Analysis and Classification of Pesticides")
 st.markdown("""
-Now we take a look at the second part, which involves the analysis on th edamage dealt by chemical compounds recorded in the :blue-badge[apistox.csv] dataset. The dataset alone is actually unusable: for this reason, informations about the :grey-badge[EPest_country_estimate] directly provided by the US government has been used to to provide the following data. However, the two datasets alone were not sufficient to make a link between voices (due to inconsistencies in the use of names), that's why a further dataset was necessary for this end: :violet-badge[Chemical List PPDB], which is updated to the data of download.\n
+Now we take a look at the second part, which involves the analysis on the potential harm of chemical compounds recorded in the :blue-badge[apistox.csv] dataset. The dataset alone is actually unusable for our scope: for this reason, information about the :grey-badge[EPest_country_estimate] directly provided by the US government is used to provide the following data. However, the two datasets alone were not sufficient to make a link (due to inconsistencies in the use of names). That's why a further dataset was necessary: :violet-badge[Chemical List PPDB], which is updated to the data of download.\n
 Having said that, the first step is to correctly understand the result provided by the :blue-badge[apistox.csv] dataset, both in terms of\n
--   determination of toxicity, meaning whether the compound is harmful for bees(1) or not(0);
--   level of toxicity, from not necessarily harmful (0) to heavily harmful (2).
+-   **determination of toxicity**, meaning whether the compound is harmful for bees(1) or not(0);
+-   **level of toxicity**, from **not necessarily harmful** (0) to **heavily harmful** (2).
 The main features involved are: INSECTICIDE, HERBICIDE, FUNGICIDE and TOXICITY TYPE.
-For a basic understanding of the features involved, see the :white-badge[EDA] section, where the apistox dataset is explained.
+For a minimal understanding of the features involved, see the "**EDA**" section, where the apistox dataset is explained.
 Given the type of analysis, two slightly different approaches are followed.
 """)
 st.subheader("Variety of Pesticides approach")
 st.markdown("""
-The first chosen approach is based on the premise that *"The more types of pesticide the bees are exposed to, the larger the impact and the damage dealt to the colonies"*. Regarding the target presented earlier, let's first see which are the feature that mainly influence the **determination of toxicity**. Here follows the result of the classification made using **Random Forest Classifier**:
+The first chosen approach is based on the premise that *"The more types of pesticides the bees are exposed to, the larger the impact and the damage dealt to the colonies"*. With this concept, let's start by seeing which are the features that mainly influence the **determination of toxicity**. Here follows the result of the classification made using **Random Forest Classifier**:
 """)
 st.dataframe(label_results)
 st.markdown("""
@@ -126,12 +126,13 @@ Now we do the same, but changing the target, in order to see what determines the
 """)
 st.dataframe(ppdb_level_results)
 st.markdown("""
-In the notebook version of this project, together with these information, there's a complex of bar plots that sorts the states from the ones with the higher usage of different compounds to those with a minor amount. 
+In the end, it's no surprise this conclusion is reached: if the compound is mainly used in insecticide, it's strongly possible it will cause harm to bees.
+In the notebook version of this project, there's also a complex of bar plots that sorts the states from the ones with the higher usage of different compounds to those with a minor amount, over the years. 
 """)
 
 st.subheader("Quantity of Pesticides approach")
 st.markdown("""
-The second approach follows the idea that *"the more is the quantity used of a pesticide, the heavier the consequences for the bees health"*. This approach is actually computed in a very similar way, but the column MEAN_KG is added among the features. Keeping the same order of things, here follows the classification of features in the **determination of toxicity**: 
+The second approach follows the idea that *"the more pesticide you use, in quantity, the heavier the consequences for the bees health"*. This approach is computed in a very similar way, but the column MEAN_KG is added among the features. Keeping the same order of things, here follows the classification of features in the **determination of toxicity**: 
 """)
 st.dataframe(label_q_results)
 st.markdown("""
@@ -140,11 +141,11 @@ It's to be expected that a compound used for insecticides would be the main reas
 """)
 st.dataframe(ppdb_q_results)
 st.markdown("""
-Surprisingly, what we see here is, instead, that the quantity of pesticide used has a way more effective impact in the **establishment of the level of toxicity**. It does however make sense, since we also expect a compound to be more harmful, as the quantity deployed increases. 
+These results do make sense, since we also expect a compound to be more and more harmful, as the quantity deployed increases, unlike the previous classification, where we only wanted to know whether a compound was dangerous or not. Then again, it's enough to affirm that huge amount of pesticides (no matter their scope) only bring heavy harm ot the colonies. 
 """)
 st.subheader("Comparison between approaches")
 st.markdown("""
-In conclusion of this part, we see how much differs the listing of the states considering the two approaches (from the ones with higher variety/quantity of pesticide used to those with lower ones). Also, another column is added: it defines, considering the position of state in the variety order, the distance in the ordering by quantity. Here follows what just explained, showing, in this order, the ranking for **toxicity label** and **ppdb level**: 
+In conclusion of this part, we see how much differs the listing of the states considering the two approaches (from the ones with higher variety/quantity of pesticide used to those with lower ones). Also, another column is added: it defines, considering the position of state in the variety order, the distance in the ordering by quantity. Here follows what just explained, showing, respectively, the ranking for **toxicity label** and **ppdb level**: 
 """)
 st.dataframe(usage_ranking_label_df)
 st.dataframe(usage_ranking_ppdb_df)
