@@ -2,13 +2,13 @@
 The scope of the project is to analyze the trend of honey produced by US honeybees along the period 1995-2021.
 The code is presented using streamlit (see section below).
 
-## Run application
+## Run application (python 3.11 recommended)
 ```bash
 git clone https://github.com/Ddav3/Bees_production_analysis.git
 cd Bees_production_analysis
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\\Scripts\\activate
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m pip install -r requirements.txt
 streamlit run run.py
 ```
 
@@ -23,7 +23,7 @@ For a better transperency, the code is shown also in blocks of a jupyter noteboo
 
 
 ## Main Datasets
-Here follows the links to the datasets that are mainly used for the analysis.  
+Here follows the links to the datasets that are mainly used for the analysis. The datasets are directly collected from Kaggle, but another version is present in the "datasets" folder.  
 - Honey Production dataset: https://www.kaggle.com/datasets/mohitpoudel/us-honey-production-19952021
 
 - Apistox dataset: https://www.kaggle.com/datasets/baharabaz/apistox-dataset
