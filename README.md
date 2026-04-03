@@ -1,6 +1,6 @@
 # HONEY PRODUCTION FROM US BEES - ANALYSIS 
-The scope of the project is to analyze the trend of honey produced by US honeybees along the period 1992-2021.
-The code is presented using streamlit (see folder "application" for the code).
+The scope of the project is to analyze the trend of honey produced by US honeybees along the period 1995-2021.
+The code is presented using streamlit (execute "streamlit run run.py" for application).
 For a more detailed analysis, the project has been divided into 4 parts:
 1. a first general analysis on the honey production
 2. an estimate of the impact of pesticide use on the bees
@@ -12,10 +12,10 @@ For a better transperency, the code is shown also in blocks of a jupyter noteboo
 
 ## Main Datasets
 Here follows the links to the datasets that are mainly used for the analysis.  
-- honey production dataset: https://www.kaggle.com/datasets/mohitpoudel/us-honey-production-19952021
+- Honey Production dataset: https://www.kaggle.com/datasets/mohitpoudel/us-honey-production-19952021
 
-- apistox dataset: https://www.kaggle.com/datasets/baharabaz/apistox-dataset
+- Apistox dataset: https://www.kaggle.com/datasets/baharabaz/apistox-dataset
 
-- weather's influence dataset: https://www.kaggle.com/datasets/jocelyndumlao/predicting-honeybee-health-from-hive-and-weather
+- Weather's influence dataset: https://www.kaggle.com/datasets/jocelyndumlao/predicting-honeybee-health-from-hive-and-weather
 
 - Varroa Destructor detection dataset: https://www.kaggle.com/datasets/anaisabelcaicedoc/varroa-detection-with-discrete-variables
